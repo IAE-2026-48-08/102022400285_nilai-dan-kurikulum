@@ -1,0 +1,12 @@
+type Query {
+    "Mengambil data transkrip nilai mahasiswa berdasarkan ID"
+    gradeRecord(student_id: ID! @eq): GradeSummary @find
+}
+
+type GradeSummary @model(class: "App\\Models\\Grade") {
+    id: ID!
+    student_id: String!
+    course_code: String!
+    grade: String
+    status: String!
+}
