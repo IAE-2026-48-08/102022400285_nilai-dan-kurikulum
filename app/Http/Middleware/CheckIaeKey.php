@@ -9,10 +9,10 @@ class CheckIaeKey
 {
     public function handle(Request $request, Closure $next)
     {
-        // Menggunakan NIM Muhammad Manhal Syarifudin
-        $nimMahasiswa = '102022400285'; 
+        // Ganti NIM kamu dengan string ketentuan tugas
+        $keyKetentuan = 'KEY-MHS-310'; 
         
-        if ($request->header('X-IAE-KEY') !== $nimMahasiswa) {
+        if ($request->header('X-IAE-KEY') !== $keyKetentuan) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized. Invalid X-IAE-KEY.',

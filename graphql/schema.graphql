@@ -9,4 +9,5 @@ type GradeSummary @model(class: "App\\Models\\Grade") {
     course_code: String!
     grade: String
     status: String!
+    receipt_number: String
 }

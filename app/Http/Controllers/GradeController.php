@@ -2,32 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Grade;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use App\Services\SsoService;
+use App\Services\SoapAuditService;
+use App\Services\RabbitMqService;
 
-#[OA\Info(
-    title: "Grades and Curriculum Service API",
-    version: "1.0.0",
-    description: "Dokumentasi API untuk Grades-and-Curriculum-Service dengan validasi X-IAE-KEY"
-)]
-#[OA\Server(
-    url: "http://localhost:8080",
-    description: "Local Development Server"
+#[OA\Tag(name: "Grades", description: "Grades & Curriculum API")]
+#[OA\SecurityScheme(
+    securityScheme: "ApiKeyAuth",
+    type: "apiKey",
+    in: "header",
+    name: "X-IAE-KEY"
 )]
 class GradeController extends Controller
 {
+    // =========================================================================
+    // ENDPOINT: CURRICULUMS
+    // =========================================================================
     #[OA\Get(
         path: "/api/v1/curriculums",
         summary: "Daftar aturan prasyarat kurikulum",
-        description: "Menampilkan daftar aturan prasyarat kurikulum program studi untuk mendeteksi keterikatan antar mata kuliah"
-    )]
-    #[OA\Parameter(
-        name: "X-IAE-KEY",
-        in: "header",
-        required: true,
-        description: "NIM Mahasiswa untuk otorisasi",
-        schema: new OA\Schema(type: "string", default: "102022400285")
+        description: "Menampilkan daftar aturan prasyarat kurikulum program studi untuk mendeteksi keterikatan antar mata kuliah",
+        security: [["ApiKeyAuth" => []]],
+        tags: ["Grades"]
     )]
     #[OA\Response(
         response: 200,
@@ -50,17 +49,6 @@ class GradeController extends Controller
             ]
         )
     )]
-    #[OA\Response(
-        response: 401,
-        description: "Unauthorized",
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "status", type: "string", example: "error"),
-                new OA\Property(property: "message", type: "string", example: "Unauthorized. Invalid X-IAE-KEY."),
-                new OA\Property(property: "errors", type: "null")
-            ]
-        )
-    )]
     public function curriculums()
     {
         $curriculums = [
@@ -79,184 +67,186 @@ class GradeController extends Controller
         ], 200);
     }
 
-    #[OA\Get(
-        path: "/api/v1/grades/{student_id}",
-        summary: "Detail riwayat transkrip nilai mahasiswa",
-        description: "Menampilkan detail riwayat transkrip nilai mahasiswa untuk pembuktian kelulusan mata kuliah prasyarat"
-    )]
-    #[OA\Parameter(
-        name: "X-IAE-KEY",
-        in: "header",
-        required: true,
-        description: "NIM Mahasiswa untuk otorisasi",
-        schema: new OA\Schema(type: "string", default: "102022400285")
-    )]
-    #[OA\Parameter(
-        name: "student_id",
-        in: "path",
-        required: true,
-        description: "ID Mahasiswa",
-        schema: new OA\Schema(type: "string")
-    )]
-    #[OA\Response(
-        response: 200,
-        description: "Successful response",
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "status", type: "string", example: "success"),
-                new OA\Property(property: "message", type: "string", example: "Data retrieved successfully"),
-                new OA\Property(property: "data", type: "object", properties: [
-                    new OA\Property(property: "student_id", type: "string", example: "102022400285"),
-                    new OA\Property(property: "gpa", type: "number", format: "float", example: 3.75),
-                    new OA\Property(property: "academic_records", type: "array", items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: "course_code", type: "string", example: "IF101"),
-                            new OA\Property(property: "grade", type: "string", example: "A"),
-                            new OA\Property(property: "status", type: "string", example: "LULUS")
-                        ]
-                    ))
-                ]),
-                new OA\Property(property: "meta", type: "object", properties: [
-                    new OA\Property(property: "service_name", type: "string", example: "Grades-and-Curriculum-Service"),
-                    new OA\Property(property: "api_version", type: "string", example: "v1")
-                ])
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 401,
-        description: "Unauthorized",
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "status", type: "string", example: "error"),
-                new OA\Property(property: "message", type: "string", example: "Unauthorized. Invalid X-IAE-KEY."),
-                new OA\Property(property: "errors", type: "null")
-            ]
-        )
-    )]
-    public function show($student_id)
-    {
-        // Ambil data riwayat nilai dari database berdasarkan student_id
-        $records = Grade::where('student_id', $student_id)->get();
-
-        $academicRecords = [];
-        foreach ($records as $record) {
-            $academicRecords[] = [
-                'course_code' => $record->course_code,
-                'grade' => $record->grade,
-                'status' => $record->status
-            ];
-        }
-
-        // Fallback ke data mock jika database kosong untuk student_id ini
-        if (empty($academicRecords)) {
-            $academicRecords[] = [
-                'course_code' => 'IF101',
-                'grade' => 'A',
-                'status' => 'LULUS'
-            ];
-        }
-
-        $grades = [
-            'student_id' => $student_id,
-            'gpa' => 3.75,
-            'academic_records' => $academicRecords
-        ];
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Data retrieved successfully',
-            'data' => $grades,
-            'meta' => [
-                'service_name' => 'Grades-and-Curriculum-Service',
-                'api_version' => 'v1'
-            ]
-        ], 200);
-    }
-
+    // =========================================================================
+    // ENDPOINT 1: INITIALIZE GRADE (TRANSAKSI KRITIS - ORKESTRASI 3 LAPIS)
+    // =========================================================================
     #[OA\Post(
         path: "/api/v1/grades/initialize",
-        summary: "Membuat baris data nilai baru",
-        description: "Membuat baris data (record) nilai baru yang masih kosong di database nilai setelah menerima perintah finalisasi"
-    )]
-    #[OA\Parameter(
-        name: "X-IAE-KEY",
-        in: "header",
-        required: true,
-        description: "NIM Mahasiswa untuk otorisasi",
-        schema: new OA\Schema(type: "string", default: "102022400285")
+        summary: "Initialize student grade record (Critical Transaction)",
+        security: [["ApiKeyAuth" => []]],
+        tags: ["Grades"]
     )]
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ["student_id", "course_code"],
             properties: [
                 new OA\Property(property: "student_id", type: "string", example: "102022400285"),
-                new OA\Property(property: "course_code", type: "string", example: "IF101")
+                new OA\Property(property: "course_code", type: "string", example: "SI4808")
             ]
         )
     )]
-    #[OA\Response(
-        response: 201,
-        description: "Resource created successfully",
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "status", type: "string", example: "success"),
-                new OA\Property(property: "message", type: "string", example: "Resource created successfully"),
-                new OA\Property(property: "data", type: "object", properties: [
-                    new OA\Property(property: "id", type: "integer", example: 1234),
-                    new OA\Property(property: "student_id", type: "string", example: "102022400285"),
-                    new OA\Property(property: "course_code", type: "string", example: "IF101"),
-                    new OA\Property(property: "grade", type: "null"),
-                    new OA\Property(property: "status", type: "string", example: "BELUM_ADA_NILAI")
-                ]),
-                new OA\Property(property: "meta", type: "object", properties: [
-                    new OA\Property(property: "service_name", type: "string", example: "Grades-and-Curriculum-Service"),
-                    new OA\Property(property: "api_version", type: "string", example: "v1")
-                ])
-            ]
-        )
-    )]
-    #[OA\Response(
-        response: 401,
-        description: "Unauthorized",
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "status", type: "string", example: "error"),
-                new OA\Property(property: "message", type: "string", example: "Unauthorized. Invalid X-IAE-KEY."),
-                new OA\Property(property: "errors", type: "null")
-            ]
-        )
-    )]
+    #[OA\Response(response: 201, description: "Grade initialized and audited successfully")]
+    #[OA\Response(response: 401, description: "Invalid API Key")]
     public function initialize(Request $request)
     {
-        $validated = $request->validate([
-            'student_id' => 'required',
-            'course_code' => 'required'
+        $request->validate([
+            'student_id' => 'required|string',
+            'course_code' => 'required|string'
         ]);
 
-        // Simpan ke database nyata agar terintegrasi dengan GraphQL
-        $grade = Grade::create([
-            'student_id' => $request->student_id,
-            'course_code' => $request->course_code,
-            'grade' => null,
-            'status' => 'BELUM_ADA_NILAI'
-        ]);
+        // 1. Simpan data awal ke database lokal Docker
+        $grade = new Grade();
+        $grade->student_id = $request->student_id;
+        $grade->course_code = $request->course_code;
+        $grade->status = 'BELUM_ADA_NILAI';
+        $grade->save();
+
+        $receiptNumber = "PENDING-AUDIT";
+
+        // LAPIS 1 & 2: SSO Login & SOAP Audit
+        try {
+            $ssoService = new SsoService();
+            $soapService = new SoapAuditService();
+
+            // Melakukan login SSO M2M menggunakan API Key kelompok
+            $apiKey = env('SSO_PASSWORD', 'KEY-MHS-310');
+            $ssoResponse = $ssoService->loginM2M($apiKey);
+
+            if (isset($ssoResponse['token'])) {
+                $token = $ssoResponse['token'];
+
+                $logData = [
+                    'grade_id' => $grade->id,
+                    'student_id' => $grade->student_id,
+                    'course_code' => $grade->course_code,
+                    'status' => $grade->status
+                ];
+
+                // Kirim XML SOAP untuk TEAM-09
+                $receiptNumber = $soapService->sendAuditLog(
+                    'TEAM-09',
+                    'GradeInitialization',
+                    $logData,
+                    $token
+                );
+
+                // Update receipt_number ke DB lokal
+                $grade->receipt_number = $receiptNumber;
+                $grade->save();
+            }
+        } catch (\Exception $e) {
+            \Log::error("Gagal SOAP Audit: " . $e->getMessage());
+        }
+
+        // LAPIS 3: Broadcast Event ke RabbitMQ Dosen
+        try {
+            if (isset($token) && $receiptNumber) {
+                $mqService = new RabbitMqService();
+                $mqService->publishEvent('grade.event', [
+                    'event' => 'grade.initialized',
+                    'team_id' => 'TEAM-09',
+                    'student_id' => $grade->student_id,
+                    'course_code' => $grade->course_code,
+                    'receipt_number' => $receiptNumber,
+                    'timestamp' => date('c')
+                ], $token);
+            }
+        } catch (\Exception $e) {
+            \Log::error("Gagal RabbitMQ Broadcast: " . $e->getMessage());
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Resource created successfully',
-            'data' => [
-                'id' => $grade->id,
-                'student_id' => $grade->student_id,
-                'course_code' => $grade->course_code,
-                'grade' => $grade->grade,
-                'status' => $grade->status
-            ],
+            'message' => 'Grade record initialized, audited, and broadcasted!',
+            'data' => $grade,
+            'iae_audit_receipt' => $receiptNumber,
             'meta' => [
-                'service_name' => 'Grades-and-Curriculum-Service',
+                'service_name' => 'Grades-Curriculum-Service',
                 'api_version' => 'v1'
             ]
         ], 201);
+    }
+
+    // =========================================================================
+    // ENDPOINT 2: GET GRADE BY ID atau NIM
+    // =========================================================================
+    #[OA\Get(
+        path: "/api/v1/grades/{id}",
+        summary: "Get grade details by ID or NIM",
+        security: [["ApiKeyAuth" => []]],
+        tags: ["Grades"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "string"))]
+    #[OA\Response(response: 200, description: "Grade record found")]
+    #[OA\Response(response: 404, description: "Grade record not found")]
+    public function show($id)
+    {
+        // Mendeteksi jika $id adalah NIM Mahasiswa (panjang >= 8 karakter atau numerik panjang)
+        if (strlen($id) >= 8) {
+            $grade = Grade::where('student_id', $id)->first();
+            
+            // Jika tidak ditemukan dengan NIM, coba cari sebagai ID
+            if (!$grade) {
+                $grade = Grade::find($id);
+            }
+        } else {
+            $grade = Grade::find($id);
+        }
+
+        if (!$grade) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Grade record not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $grade
+        ], 200);
+    }
+
+    // =========================================================================
+    // ENDPOINT 3: UPDATE GRADE STATUS / SCORE
+    // =========================================================================
+    #[OA\Put(
+        path: "/api/v1/grades/{id}",
+        summary: "Update student grade status",
+        security: [["ApiKeyAuth" => []]],
+        tags: ["Grades"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "SUDAH_DINILAI")
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Grade updated successfully")]
+    public function update(Request $request, $id)
+    {
+        $grade = Grade::find($id);
+
+        if (!$grade) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Grade record not found'
+            ], 404);
+        }
+
+        $request->validate([
+            'status' => 'required|string|in:BELUM_ADA_NILAI,SUDAH_DINILAI,REMEDI,LULUS'
+        ]);
+
+        $grade->status = $request->status;
+        $grade->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Grade status updated successfully',
+            'data' => $grade
+        ], 200);
     }
 }

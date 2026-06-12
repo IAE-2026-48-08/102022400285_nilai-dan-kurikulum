@@ -14,5 +14,6 @@ class Grade extends Model
         'course_code',
         'grade',
         'status',
+        'receipt_number',
     ];
 }

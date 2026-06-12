@@ -1,260 +1,48 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Grades and Curriculum Service API",
-        "description": "Dokumentasi API untuk Grades-and-Curriculum-Service dengan validasi X-IAE-KEY",
+        "title": "Grades API",
+        "description": "API Documentation for Student Grade and Curriculum Management",
         "version": "1.0.0"
     },
     "servers": [
         {
             "url": "http://localhost:8080",
-            "description": "Local Development Server"
+            "description": "Local API Server"
         }
     ],
     "paths": {
         "/api/v1/curriculums": {
             "get": {
+                "tags": [
+                    "Grades"
+                ],
                 "summary": "Daftar aturan prasyarat kurikulum",
-                "description": "Menampilkan daftar aturan prasyarat kurikulum program studi untuk mendeteksi keterikatan antar mata kuliah",
                 "operationId": "580dfd2db9d016e66014796821f3c4e9",
-                "parameters": [
-                    {
-                        "name": "X-IAE-KEY",
-                        "in": "header",
-                        "description": "NIM Mahasiswa untuk otorisasi",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "default": "102022400285"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Data retrieved successfully"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "course_code": {
-                                                        "type": "string",
-                                                        "example": "IF101"
-                                                    },
-                                                    "course_name": {
-                                                        "type": "string",
-                                                        "example": "Dasar Pemrograman"
-                                                    },
-                                                    "prerequisite": {
-                                                        "type": "string",
-                                                        "example": "-"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "meta": {
-                                            "properties": {
-                                                "service_name": {
-                                                    "type": "string",
-                                                    "example": "Grades-and-Curriculum-Service"
-                                                },
-                                                "api_version": {
-                                                    "type": "string",
-                                                    "example": "v1"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized. Invalid X-IAE-KEY."
-                                        },
-                                        "errors": {
-                                            "type": "null"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Successful response"
                     }
-                }
-            }
-        },
-        "/api/v1/grades/{student_id}": {
-            "get": {
-                "summary": "Detail riwayat transkrip nilai mahasiswa",
-                "description": "Menampilkan detail riwayat transkrip nilai mahasiswa untuk pembuktian kelulusan mata kuliah prasyarat",
-                "operationId": "a92907dad8768fdfb5dfc102dcdf5d52",
-                "parameters": [
+                },
+                "security": [
                     {
-                        "name": "X-IAE-KEY",
-                        "in": "header",
-                        "description": "NIM Mahasiswa untuk otorisasi",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "default": "102022400285"
-                        }
-                    },
-                    {
-                        "name": "student_id",
-                        "in": "path",
-                        "description": "ID Mahasiswa",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
+                        "ApiKeyAuth": []
                     }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Data retrieved successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "student_id": {
-                                                    "type": "string",
-                                                    "example": "102022400285"
-                                                },
-                                                "gpa": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 3.75
-                                                },
-                                                "academic_records": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "course_code": {
-                                                                "type": "string",
-                                                                "example": "IF101"
-                                                            },
-                                                            "grade": {
-                                                                "type": "string",
-                                                                "example": "A"
-                                                            },
-                                                            "status": {
-                                                                "type": "string",
-                                                                "example": "LULUS"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "meta": {
-                                            "properties": {
-                                                "service_name": {
-                                                    "type": "string",
-                                                    "example": "Grades-and-Curriculum-Service"
-                                                },
-                                                "api_version": {
-                                                    "type": "string",
-                                                    "example": "v1"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized. Invalid X-IAE-KEY."
-                                        },
-                                        "errors": {
-                                            "type": "null"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
+                ]
             }
         },
         "/api/v1/grades/initialize": {
             "post": {
-                "summary": "Membuat baris data nilai baru",
-                "description": "Membuat baris data (record) nilai baru yang masih kosong di database nilai setelah menerima perintah finalisasi",
-                "operationId": "2b140c1f9fc9c9faf361c3557769aa30",
-                "parameters": [
-                    {
-                        "name": "X-IAE-KEY",
-                        "in": "header",
-                        "description": "NIM Mahasiswa untuk otorisasi",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "default": "102022400285"
-                        }
-                    }
+                "tags": [
+                    "Grades"
                 ],
+                "summary": "Initialize student grade record",
+                "operationId": "2b140c1f9fc9c9faf361c3557769aa30",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "student_id",
-                                    "course_code"
-                                ],
                                 "properties": {
                                     "student_id": {
                                         "type": "string",
@@ -262,7 +50,7 @@
                                     },
                                     "course_code": {
                                         "type": "string",
-                                        "example": "IF101"
+                                        "example": "SI4808"
                                     }
                                 },
                                 "type": "object"
@@ -272,87 +60,62 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Resource created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Resource created successfully"
-                                        },
-                                        "data": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1234
-                                                },
-                                                "student_id": {
-                                                    "type": "string",
-                                                    "example": "102022400285"
-                                                },
-                                                "course_code": {
-                                                    "type": "string",
-                                                    "example": "IF101"
-                                                },
-                                                "grade": {
-                                                    "type": "null"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "BELUM_ADA_NILAI"
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "meta": {
-                                            "properties": {
-                                                "service_name": {
-                                                    "type": "string",
-                                                    "example": "Grades-and-Curriculum-Service"
-                                                },
-                                                "api_version": {
-                                                    "type": "string",
-                                                    "example": "v1"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized. Invalid X-IAE-KEY."
-                                        },
-                                        "errors": {
-                                            "type": "null"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                        "description": "Grade initialized and audited"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/grades/{id}": {
+            "get": {
+                "tags": [
+                    "Grades"
+                ],
+                "summary": "Get grade details",
+                "operationId": "d76ab5c30aaa9e9a01e042471dd3806a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     }
-                }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Grade record found"
+                    },
+                    "404": {
+                        "description": "Grade record not found"
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
             }
         }
-    }
+    },
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "name": "X-IAE-KEY",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Grades",
+            "description": "Grades & Curriculum API"
+        }
+    ]
 }
