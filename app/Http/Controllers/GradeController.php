@@ -168,85 +168,50 @@ class GradeController extends Controller
     }
 
     // =========================================================================
-    // ENDPOINT 2: GET GRADE BY ID atau NIM
+    // ENDPOINT 2: GET GRADE BY NIM (student_id)
     // =========================================================================
     #[OA\Get(
-        path: "/api/v1/grades/{id}",
-        summary: "Get grade details by ID or NIM",
+        path: "/api/v1/grades/{student_id}",
+        summary: "Menampilkan detail riwayat transkrip nilai mahasiswa",
+        description: "Menampilkan detail riwayat transkrip nilai mahasiswa untuk pembuktian kelulusan mata kuliah prasyarat",
         security: [["ApiKeyAuth" => []]],
         tags: ["Grades"]
     )]
-    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "string"))]
-    #[OA\Response(response: 200, description: "Grade record found")]
-    #[OA\Response(response: 404, description: "Grade record not found")]
-    public function show($id)
-    {
-        // Mendeteksi jika $id adalah NIM Mahasiswa (panjang >= 8 karakter atau numerik panjang)
-        if (strlen($id) >= 8) {
-            $grade = Grade::where('student_id', $id)->first();
-            
-            // Jika tidak ditemukan dengan NIM, coba cari sebagai ID
-            if (!$grade) {
-                $grade = Grade::find($id);
-            }
-        } else {
-            $grade = Grade::find($id);
-        }
-
-        if (!$grade) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Grade record not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $grade
-        ], 200);
-    }
-
-    // =========================================================================
-    // ENDPOINT 3: UPDATE GRADE STATUS / SCORE
-    // =========================================================================
-    #[OA\Put(
-        path: "/api/v1/grades/{id}",
-        summary: "Update student grade status",
-        security: [["ApiKeyAuth" => []]],
-        tags: ["Grades"]
-    )]
-    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
-    #[OA\RequestBody(
-        required: true,
+    #[OA\Parameter(name: "student_id", in: "path", required: true, description: "NIM Mahasiswa", schema: new OA\Schema(type: "string"))]
+    #[OA\Response(
+        response: 200,
+        description: "Grade records found",
         content: new OA\JsonContent(
             properties: [
-                new OA\Property(property: "status", type: "string", example: "SUDAH_DINILAI")
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "data", type: "array", items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "student_id", type: "string", example: "102022400285"),
+                        new OA\Property(property: "course_code", type: "string", example: "SI4808"),
+                        new OA\Property(property: "grade", type: "string", example: "A"),
+                        new OA\Property(property: "status", type: "string", example: "LULUS"),
+                        new OA\Property(property: "receipt_number", type: "string", example: "REC-12345")
+                    ]
+                ))
             ]
         )
     )]
-    #[OA\Response(response: 200, description: "Grade updated successfully")]
-    public function update(Request $request, $id)
+    #[OA\Response(response: 404, description: "Grade records not found")]
+    public function show($student_id)
     {
-        $grade = Grade::find($id);
+        $grades = Grade::where('student_id', $student_id)->get();
 
-        if (!$grade) {
+        if ($grades->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Grade record not found'
+                'message' => 'Grade records not found for student ID: ' . $student_id
             ], 404);
         }
 
-        $request->validate([
-            'status' => 'required|string|in:BELUM_ADA_NILAI,SUDAH_DINILAI,REMEDI,LULUS'
-        ]);
-
-        $grade->status = $request->status;
-        $grade->save();
-
         return response()->json([
             'status' => 'success',
-            'message' => 'Grade status updated successfully',
-            'data' => $grade
+            'data' => $grades
         ], 200);
     }
 }
