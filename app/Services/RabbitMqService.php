@@ -7,22 +7,24 @@ use Illuminate\Support\Facades\Log;
 
 class RabbitMqService
 {
-    public function publishEvent($routingKey, array $payload)
+    public function publishEvent($routingKey, array $payload, $token = null)
     {
-        // 1. Coba ambil token dari session
-        $token = session('api_token');
+        // 1. Coba ambil token dari parameter atau session
+        $token = $token ?: session('api_token');
 
         // 2. Jika token kosong, coba lakukan autentikasi ulang (get new token)
         if (!$token) {
-            $response = Http::post('https://iae-sso.virtualfri.id/api/v1/auth/token', [
-                'api_key' => 'KEY-MHS-310' // GANTI dengan API Key milik kelompokmu!
-            ]);
+            $ssoService = new SsoService();
+            $ssoResponse = $ssoService->loginM2M(
+                env('SSO_PASSWORD', 'KEY-MHS-310'),
+                env('SSO_NIM', '102022400285')
+            );
 
-            if ($response->successful()) {
-                $token = $response->json()['token'];
+            if (isset($ssoResponse['token'])) {
+                $token = $ssoResponse['token'];
                 session(['api_token' => $token]); // Simpan agar bisa dipakai lagi nanti
             } else {
-                Log::error("RabbitMQ Service: Gagal mendapatkan token otomatis. " . $response->body());
+                Log::error("RabbitMQ Service: Gagal mendapatkan token otomatis. Response: " . json_encode($ssoResponse));
                 return false;
             }
         }

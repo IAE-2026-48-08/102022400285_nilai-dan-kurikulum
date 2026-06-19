@@ -7,16 +7,21 @@ use Illuminate\Support\Facades\Http;
 class SsoService
 {
     protected $baseUrl;
+    protected $defaultNim;
 
     public function __construct()
     {
         $this->baseUrl = config('services.iae_sso.url');
+        $this->defaultNim = config('services.iae_sso.nim', '102022400285');
     }
 
-    public function loginM2M(string $apiKey)
+    public function loginM2M(string $apiKey, ?string $nim = null)
     {
+        $nim = $nim ?: $this->defaultNim;
+
         $response = Http::post($this->baseUrl . '/api/v1/auth/token', [
-            'api_key' => $apiKey
+            'api_key' => $apiKey,
+            'nim' => $nim
         ]);
 
         return $response->json();
