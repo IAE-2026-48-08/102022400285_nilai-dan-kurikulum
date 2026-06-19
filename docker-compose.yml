@@ -41,7 +41,7 @@ services:
     container_name: nilai_kurikulum_web
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8003:80"
     volumes:
       - .:/var/www/html
       - .docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf

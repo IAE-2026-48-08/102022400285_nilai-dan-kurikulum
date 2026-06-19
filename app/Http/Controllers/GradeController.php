@@ -81,6 +81,7 @@ class GradeController extends Controller
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: "student_id", type: "string", example: "102022400285"),
+                new OA\Property(property: "course_id", type: "string", example: "SI4808"),
                 new OA\Property(property: "course_code", type: "string", example: "SI4808")
             ]
         )
@@ -91,13 +92,14 @@ class GradeController extends Controller
     {
         $request->validate([
             'student_id' => 'required|string',
-            'course_code' => 'required|string'
+            'course_id' => 'required_without:course_code|string',
+            'course_code' => 'required_without:course_id|string'
         ]);
 
         // 1. Simpan data awal ke database lokal Docker
         $grade = new Grade();
         $grade->student_id = $request->student_id;
-        $grade->course_code = $request->course_code;
+        $grade->course_code = $request->course_code ?? $request->course_id;
         $grade->status = 'BELUM_ADA_NILAI';
         $grade->save();
 

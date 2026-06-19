@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
+            "url": "http://localhost:8003",
             "description": "Local API Server"
         }
     ],
@@ -98,6 +98,10 @@
                                     "student_id": {
                                         "type": "string",
                                         "example": "102022400285"
+                                    },
+                                    "course_id": {
+                                        "type": "string",
+                                        "example": "SI4808"
                                     },
                                     "course_code": {
                                         "type": "string",
