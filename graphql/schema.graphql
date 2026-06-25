@@ -1,6 +1,6 @@
 type Query {
     "Mengambil data transkrip nilai mahasiswa berdasarkan ID"
-    gradeRecord(student_id: ID! @eq): GradeSummary @find
+    gradeRecord(student_id: ID! @eq): [GradeSummary!]! @all
 }
 
 type GradeSummary @model(class: "App\\Models\\Grade") {

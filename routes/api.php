@@ -5,6 +5,8 @@ use App\Http\Controllers\GradeController;
 
 Route::middleware(['iae.auth'])->prefix('v1')->group(function () {
     Route::get('/curriculums', [GradeController::class, 'curriculums']);
+    Route::get('/grades', [GradeController::class, 'index']);
     Route::get('/grades/{student_id}', [GradeController::class, 'show']);
+    Route::post('/grades', [GradeController::class, 'initialize']);
     Route::post('/grades/initialize', [GradeController::class, 'initialize']);
 });

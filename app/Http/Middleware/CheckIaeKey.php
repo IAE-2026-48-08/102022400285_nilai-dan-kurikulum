@@ -9,10 +9,13 @@ class CheckIaeKey
 {
     public function handle(Request $request, Closure $next)
     {
-        // Ganti NIM kamu dengan string ketentuan tugas
-        $keyKetentuan = 'KEY-MHS-310'; 
+        $nim = env('SSO_NIM', '102022400285');
+        $ssoPassword = env('SSO_PASSWORD', 'KEY-MHS-310');
+        $fallbackKey = 'KEY-MHS-310';
         
-        if ($request->header('X-IAE-KEY') !== $keyKetentuan) {
+        $providedKey = $request->header('X-IAE-KEY');
+        
+        if ($providedKey !== $nim && $providedKey !== $ssoPassword && $providedKey !== $fallbackKey) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Unauthorized. Invalid X-IAE-KEY.',

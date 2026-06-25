@@ -82,13 +82,93 @@
                 ]
             }
         },
-        "/api/v1/grades/initialize": {
+        "/api/v1/grades": {
+            "get": {
+                "tags": [
+                    "Grades"
+                ],
+                "summary": "Menampilkan semua data nilai mahasiswa",
+                "description": "Menampilkan daftar seluruh data nilai mahasiswa",
+                "operationId": "b8486dec7450301f5b89d58208649f9e",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "student_id": {
+                                                        "type": "string",
+                                                        "example": "102022400285"
+                                                    },
+                                                    "course_code": {
+                                                        "type": "string",
+                                                        "example": "SI4808"
+                                                    },
+                                                    "grade": {
+                                                        "type": "string",
+                                                        "example": "A"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "LULUS"
+                                                    },
+                                                    "receipt_number": {
+                                                        "type": "string",
+                                                        "example": "REC-12345"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "service_name": {
+                                                    "type": "string",
+                                                    "example": "Grades-Curriculum-Service"
+                                                },
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "v1"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Grades"
                 ],
                 "summary": "Initialize student grade record (Critical Transaction)",
-                "operationId": "2b140c1f9fc9c9faf361c3557769aa30",
+                "operationId": "19f4ae3304228b18e0f09491e2a276ad",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -158,6 +238,10 @@
                                             "type": "string",
                                             "example": "success"
                                         },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Data retrieved successfully"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
@@ -189,6 +273,19 @@
                                                 },
                                                 "type": "object"
                                             }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "service_name": {
+                                                    "type": "string",
+                                                    "example": "Grades-Curriculum-Service"
+                                                },
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "v1"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"

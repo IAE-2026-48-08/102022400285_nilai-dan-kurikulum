@@ -64,14 +64,14 @@ class GradeController extends Controller
                 'service_name' => 'Grades-and-Curriculum-Service',
                 'api_version' => 'v1'
             ]
-        ], 200);
+        ], 200)->header('Content-Type', 'application/json; charset=utf-8');
     }
 
     // =========================================================================
     // ENDPOINT 1: INITIALIZE GRADE (TRANSAKSI KRITIS - ORKESTRASI 3 LAPIS)
     // =========================================================================
     #[OA\Post(
-        path: "/api/v1/grades/initialize",
+        path: "/api/v1/grades",
         summary: "Initialize student grade record (Critical Transaction)",
         security: [["ApiKeyAuth" => []]],
         tags: ["Grades"]
@@ -166,11 +166,60 @@ class GradeController extends Controller
                 'service_name' => 'Grades-Curriculum-Service',
                 'api_version' => 'v1'
             ]
-        ], 201);
+        ], 201)->header('Content-Type', 'application/json; charset=utf-8');
     }
 
     // =========================================================================
-    // ENDPOINT 2: GET GRADE BY NIM (student_id)
+    // ENDPOINT 2: GET ALL GRADES
+    // =========================================================================
+    #[OA\Get(
+        path: "/api/v1/grades",
+        summary: "Menampilkan semua data nilai mahasiswa",
+        description: "Menampilkan daftar seluruh data nilai mahasiswa",
+        security: [["ApiKeyAuth" => []]],
+        tags: ["Grades"]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Successful response",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "message", type: "string", example: "Data retrieved successfully"),
+                new OA\Property(property: "data", type: "array", items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "student_id", type: "string", example: "102022400285"),
+                        new OA\Property(property: "course_code", type: "string", example: "SI4808"),
+                        new OA\Property(property: "grade", type: "string", example: "A"),
+                        new OA\Property(property: "status", type: "string", example: "LULUS"),
+                        new OA\Property(property: "receipt_number", type: "string", example: "REC-12345")
+                    ]
+                )),
+                new OA\Property(property: "meta", type: "object", properties: [
+                    new OA\Property(property: "service_name", type: "string", example: "Grades-Curriculum-Service"),
+                    new OA\Property(property: "api_version", type: "string", example: "v1")
+                ])
+            ]
+        )
+    )]
+    public function index()
+    {
+        $grades = Grade::all();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Data retrieved successfully',
+            'data' => $grades,
+            'meta' => [
+                'service_name' => 'Grades-Curriculum-Service',
+                'api_version' => 'v1'
+            ]
+        ], 200)->header('Content-Type', 'application/json; charset=utf-8');
+    }
+
+    // =========================================================================
+    // ENDPOINT 3: GET GRADE BY NIM (student_id)
     // =========================================================================
     #[OA\Get(
         path: "/api/v1/grades/{student_id}",
@@ -186,6 +235,7 @@ class GradeController extends Controller
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "message", type: "string", example: "Data retrieved successfully"),
                 new OA\Property(property: "data", type: "array", items: new OA\Items(
                     properties: [
                         new OA\Property(property: "id", type: "integer", example: 1),
@@ -195,25 +245,37 @@ class GradeController extends Controller
                         new OA\Property(property: "status", type: "string", example: "LULUS"),
                         new OA\Property(property: "receipt_number", type: "string", example: "REC-12345")
                     ]
-                ))
+                )),
+                new OA\Property(property: "meta", type: "object", properties: [
+                    new OA\Property(property: "service_name", type: "string", example: "Grades-Curriculum-Service"),
+                    new OA\Property(property: "api_version", type: "string", example: "v1")
+                ])
             ]
         )
     )]
     #[OA\Response(response: 404, description: "Grade records not found")]
-    public function show($student_id)
+    public function show($id)
     {
-        $grades = Grade::where('student_id', $student_id)->get();
+        $grades = Grade::where('student_id', $id)
+            ->orWhere('id', $id)
+            ->get();
 
         if ($grades->isEmpty()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Grade records not found for student ID: ' . $student_id
-            ], 404);
+                'message' => 'Grade records not found for student ID: ' . $id,
+                'errors' => null
+            ], 404)->header('Content-Type', 'application/json; charset=utf-8');
         }
 
         return response()->json([
             'status' => 'success',
-            'data' => $grades
-        ], 200);
+            'message' => 'Data retrieved successfully',
+            'data' => $grades,
+            'meta' => [
+                'service_name' => 'Grades-Curriculum-Service',
+                'api_version' => 'v1'
+            ]
+        ], 200)->header('Content-Type', 'application/json; charset=utf-8');
     }
 }
