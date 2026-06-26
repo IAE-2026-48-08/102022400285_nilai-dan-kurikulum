@@ -34,7 +34,7 @@ if [ "$DB_CONNECTION" = "mysql" ] && [ -n "$DB_HOST" ]; then
 fi
 
 # Run migrations if app container and in production or if explicitly asked
-if [ "$1" = "php-fpm" ]; then
+if [ "$1" = "php-fpm" ] || { [ "$1" = "php" ] && [ "$3" = "serve" ]; }; then
     echo "Discovering package manifest..."
     php artisan package:discover --ansi
 

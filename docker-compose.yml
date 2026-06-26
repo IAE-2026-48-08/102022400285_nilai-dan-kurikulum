@@ -6,8 +6,9 @@ services:
     build:
       context: .
       target: runtime
-    container_name: nilai_kurikulum_app
     restart: unless-stopped
+    ports:
+      - "8003:8000"
     working_dir: /var/www/html
     volumes:
       - .:/var/www/html
@@ -34,28 +35,10 @@ services:
       - nilai_kurikulum_network
 
   # ----------------------------------------------------
-  # Nginx Web Server Container
-  # ----------------------------------------------------
-  web:
-    image: nginx:alpine
-    container_name: nilai_kurikulum_web
-    restart: unless-stopped
-    ports:
-      - "8003:80"
-    volumes:
-      - .:/var/www/html
-      - .docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - app
-    networks:
-      - nilai_kurikulum_network
-
-  # ----------------------------------------------------
   # MySQL Database Container
   # ----------------------------------------------------
   db:
     image: mysql:8.0
-    container_name: nilai_kurikulum_db
     restart: unless-stopped
     ports:
       - "33069:3306"
@@ -79,7 +62,6 @@ services:
   # ----------------------------------------------------
   redis:
     image: redis:alpine
-    container_name: nilai_kurikulum_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -93,7 +75,6 @@ services:
     build:
       context: .
       target: runtime
-    container_name: nilai_kurikulum_queue
     restart: unless-stopped
     working_dir: /var/www/html
     command: php artisan queue:work --verbose --tries=3 --timeout=90
